@@ -6,9 +6,10 @@
 <title>Super Monkey Adventure</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;overflow:hidden;background:#0a0500;}
-body{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:-webkit-fill-available;font-family:'Georgia',serif;background:#0a0500;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
-#gc{position:relative;width:480px;height:640px;overflow:hidden;border:3px solid #8B6914;box-shadow:0 0 50px rgba(200,130,20,0.7);transform-origin:center center;flex-shrink:0;}
+html{width:100%;height:100%;overflow:hidden;background:#0a0500;}
+body{width:100%;height:100%;overflow:hidden;background:#0a0500;display:flex;align-items:center;justify-content:center;font-family:'Georgia',serif;}
+#gc-wrap{display:flex;align-items:center;justify-content:center;width:100%;height:100%;}
+#gc{position:relative;width:480px;height:640px;overflow:hidden;border:3px solid #8B6914;box-shadow:0 0 50px rgba(200,130,20,0.7);transform-origin:top left;flex-shrink:0;}
 canvas{display:block;}
 #ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
 #hud{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 12px;background:linear-gradient(to bottom,rgba(0,0,0,0.78),transparent);}
@@ -58,6 +59,7 @@ canvas{display:block;}
 </style>
 </head>
 <body>
+<div id="gc-wrap">
 <div id="gc">
   <canvas id="cv" width="480" height="640"></canvas>
   <div id="ui">
@@ -104,6 +106,7 @@ canvas{display:block;}
   <div id="top-right">
     <button class="ctrl-btn" id="mute-btn" ontouchstart="muteT(event)" onclick="muteC()">🔊</button>
   </div>
+</div>
 </div>
 
 <script>
@@ -787,7 +790,10 @@ document.addEventListener('keyup',e=>{keys[e.key]=false;});
 let ts={x:0,y:0};
 cv.addEventListener('touchstart',e=>{ts={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();},{passive:false});
 cv.addEventListener('touchmove',e=>{
-  const ddx=e.touches[0].clientX-ts.x,ddy=e.touches[0].clientY-ts.y;
+  const GW=480,GH=640;
+  const scale=Math.min(window.innerWidth/GW,window.innerHeight/GH);
+  const ddx=(e.touches[0].clientX-ts.x)/scale;
+  const ddy=(e.touches[0].clientY-ts.y)/scale;
   player.x=Math.max(0,Math.min(W-player.w,player.x+ddx*0.85));
   player.y=Math.max(0,Math.min(H-player.h,player.y+ddy*0.85));
   ts={x:e.touches[0].clientX,y:e.touches[0].clientY};e.preventDefault();
@@ -815,24 +821,25 @@ function mainMenu(){
 }
 </script>
 <script>
-// Scale the game to fit any screen — iPhone, Android, desktop
 function scaleGame(){
   const gc=document.getElementById('gc');
-  const GW=480,GH=640;
-  // Available space — account for iPhone safe areas
-  const aw=window.innerWidth;
-  const ah=window.innerHeight;
-  const scale=Math.min(aw/GW, ah/GH);
-  gc.style.transform='scale('+scale+')';
-  // Center it
-  gc.style.marginLeft=((aw-GW*scale)/2)+'px';
-  gc.style.marginTop=((ah-GH*scale)/2)+'px';
-  gc.style.marginRight='0';
-  gc.style.marginBottom='0';
+  const GW=480, GH=640;
+  const vw=window.innerWidth;
+  const vh=window.innerHeight;
+  const scale=Math.min(vw/GW, vh/GH);
+  const scaledW=GW*scale;
+  const scaledH=GH*scale;
+  const tx=(vw-scaledW)/2;
+  const ty=(vh-scaledH)/2;
+  // transform-origin is top left, so we translate manually
+  gc.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';
+  gc.style.transformOrigin='0 0';
 }
 scaleGame();
-window.addEventListener('resize',scaleGame);
-window.addEventListener('orientationchange',function(){setTimeout(scaleGame,200);});
+window.addEventListener('resize', scaleGame);
+window.addEventListener('orientationchange', function(){ setTimeout(scaleGame, 300); });
+// Also run after fonts/layout settle
+window.addEventListener('load', scaleGame);
 </script>
 </body>
 </html>
